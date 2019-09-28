@@ -31,7 +31,7 @@ func main() {
 
 	http.HandleFunc("/events-endpoint", hundleEvent(oauthToken, signedSecret))
 
-	fmt.Println("[INFO] Server listening")
+	log.Println("[INFO] Server listening")
 	log.Fatal(http.ListenAndServe(":"+port, nil))
 }
 
@@ -41,25 +41,27 @@ func hundleEvent(oauthToken string, signedSecret string) func(w http.ResponseWri
 	return func(w http.ResponseWriter, r *http.Request) {
 		buf := new(bytes.Buffer)
 		if _, err := buf.ReadFrom(r.Body); err != nil {
-			log.Fatal("Cannot read body", err)
+			log.Fatal("Cannot read body: ", err)
 			w.WriteHeader(http.StatusInternalServerError)
 		}
 		body := buf.String()
 
+		log.Printf("%+v", r.Header)
+
 		eventsAPIEvent, err := slackevents.ParseEvent(json.RawMessage(body), slackevents.OptionNoVerifyToken())
 		if err != nil {
-			log.Fatal("Cannot parse event", err)
+			log.Fatal("Cannot parse event: ", err)
 			w.WriteHeader(http.StatusInternalServerError)
 		}
 
 		sv, err := slack.NewSecretsVerifier(r.Header, signedSecret)
 		if err != nil {
-			log.Fatal("Cannot NewSecretsVerifier", err)
+			log.Fatal("Cannot NewSecretsVerifier: ", err)
 			w.WriteHeader(http.StatusInternalServerError)
 		}
 
 		if err := sv.Ensure(); err != nil {
-			log.Fatal("Cannot Ensure signed secrets", err)
+			log.Fatal("Cannot Ensure signed secrets: ", err)
 			w.WriteHeader(http.StatusInternalServerError)
 		}
 
@@ -72,7 +74,7 @@ func hundleEvent(oauthToken string, signedSecret string) func(w http.ResponseWri
 
 			w.Header().Set("Content-Type", "text")
 			if _, err := w.Write([]byte(r.Challenge)); err != nil {
-				log.Fatal("Cannot make ChallengeResponse", err)
+				log.Fatal("Cannot make ChallengeResponse: ", err)
 				w.WriteHeader(http.StatusInternalServerError)
 			}
 		}
@@ -82,7 +84,7 @@ func hundleEvent(oauthToken string, signedSecret string) func(w http.ResponseWri
 			switch ev := innerEvent.Data.(type) {
 			case *slackevents.AppMentionEvent:
 				if _, _, err := api.PostMessage(ev.Channel, slack.MsgOptionText("Yes, hello.", false)); err != nil {
-					log.Fatal("Cannot PostMessage", err)
+					log.Fatal("Cannot PostMessage: ", err)
 					w.WriteHeader(http.StatusInternalServerError)
 				}
 			}
