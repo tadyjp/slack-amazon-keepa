@@ -3,7 +3,6 @@ package main
 import (
 	"bytes"
 	"encoding/json"
-	"fmt"
 	"log"
 	"net/http"
 	"os"
@@ -45,6 +44,8 @@ func hundleEvent(oauthToken string, signedSecret string) func(w http.ResponseWri
 			w.WriteHeader(http.StatusInternalServerError)
 		}
 		body := buf.String()
+
+		log.Println(body)
 
 		eventsAPIEvent, err := slackevents.ParseEvent(json.RawMessage(body), slackevents.OptionNoVerifyToken())
 		if err != nil {
@@ -100,7 +101,7 @@ func hundleEvent(oauthToken string, signedSecret string) func(w http.ResponseWri
 func replyKeepaURL(api *slack.Client, ev *slackevents.MessageEvent) error {
 	// re := regexp.MustCompile(`dp/([^/?]+)(\?|\/|$)`)
 
-	fmt.Printf("%+v", ev.Text)
+	log.Printf("%+v", ev.Text)
 
 	// for _, l := range ev.Links {
 	// 	match := re.FindStringSubmatch(l.URL)
