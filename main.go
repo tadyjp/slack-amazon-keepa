@@ -24,18 +24,18 @@ func main() {
 		log.Fatal("$SLACK_OAUTH_ACCESS_TOKEN must be set")
 	}
 
-	signedSecrets := os.Getenv("SLACK_SIGNED_SECRETS")
-	if signedSecrets == "" {
-		log.Fatal("$SLACK_SIGNED_SECRETS must be set")
+	signedSecret := os.Getenv("SLACK_SIGNED_SECRET")
+	if signedSecret == "" {
+		log.Fatal("$SLACK_SIGNED_SECRET must be set")
 	}
 
-	http.HandleFunc("/events-endpoint", hundleEvent(oauthToken, signedSecrets))
+	http.HandleFunc("/events-endpoint", hundleEvent(oauthToken, signedSecret))
 
 	fmt.Println("[INFO] Server listening")
 	log.Fatal(http.ListenAndServe(":"+port, nil))
 }
 
-func hundleEvent(oauthToken string, signedSecrets string) func(w http.ResponseWriter, r *http.Request) {
+func hundleEvent(oauthToken string, signedSecret string) func(w http.ResponseWriter, r *http.Request) {
 	var api = slack.New(oauthToken)
 
 	return func(w http.ResponseWriter, r *http.Request) {
@@ -52,7 +52,7 @@ func hundleEvent(oauthToken string, signedSecrets string) func(w http.ResponseWr
 			w.WriteHeader(http.StatusInternalServerError)
 		}
 
-		sv, err := slack.NewSecretsVerifier(r.Header, signedSecrets)
+		sv, err := slack.NewSecretsVerifier(r.Header, signedSecret)
 		if err != nil {
 			log.Fatal("Cannot NewSecretsVerifier", err)
 			w.WriteHeader(http.StatusInternalServerError)
