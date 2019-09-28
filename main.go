@@ -46,7 +46,7 @@ func hundleEvent(oauthToken string, signedSecret string) func(w http.ResponseWri
 		}
 		body := buf.String()
 
-		eventsAPIEvent, err := slackevents.ParseEvent(json.RawMessage(body))
+		eventsAPIEvent, err := slackevents.ParseEvent(json.RawMessage(body), slackevents.OptionNoVerifyToken())
 		if err != nil {
 			log.Fatal("Cannot parse event", err)
 			w.WriteHeader(http.StatusInternalServerError)
