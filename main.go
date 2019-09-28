@@ -1,29 +1,90 @@
 package main
 
 import (
+	"bytes"
+	"encoding/json"
+	"fmt"
 	"log"
 	"net/http"
 	"os"
 
-	"github.com/gin-gonic/gin"
 	_ "github.com/heroku/x/hmetrics/onload"
+	"github.com/nlopes/slack"
+	"github.com/nlopes/slack/slackevents"
 )
 
 func main() {
 	port := os.Getenv("PORT")
-
 	if port == "" {
 		log.Fatal("$PORT must be set")
 	}
 
-	router := gin.New()
-	router.Use(gin.Logger())
-	router.LoadHTMLGlob("templates/*.tmpl.html")
-	router.Static("/static", "static")
+	oauthToken := os.Getenv("SLACK_OAUTH_ACCESS_TOKEN")
+	if oauthToken == "" {
+		log.Fatal("$SLACK_OAUTH_ACCESS_TOKEN must be set")
+	}
 
-	router.GET("/", func(c *gin.Context) {
-		c.HTML(http.StatusOK, "index.tmpl.html", nil)
-	})
+	signedSecrets := os.Getenv("SLACK_SIGNED_SECRETS")
+	if signedSecrets == "" {
+		log.Fatal("$SLACK_SIGNED_SECRETS must be set")
+	}
 
-	router.Run(":" + port)
+	http.HandleFunc("/events-endpoint", hundleEvent(oauthToken, signedSecrets))
+
+	fmt.Println("[INFO] Server listening")
+	log.Fatal(http.ListenAndServe(":"+port, nil))
+}
+
+func hundleEvent(oauthToken string, signedSecrets string) func(w http.ResponseWriter, r *http.Request) {
+	var api = slack.New(oauthToken)
+
+	return func(w http.ResponseWriter, r *http.Request) {
+		buf := new(bytes.Buffer)
+		if _, err := buf.ReadFrom(r.Body); err != nil {
+			log.Fatal("Cannot read body", err)
+			w.WriteHeader(http.StatusInternalServerError)
+		}
+		body := buf.String()
+
+		eventsAPIEvent, err := slackevents.ParseEvent(json.RawMessage(body))
+		if err != nil {
+			log.Fatal("Cannot parse event", err)
+			w.WriteHeader(http.StatusInternalServerError)
+		}
+
+		sv, err := slack.NewSecretsVerifier(r.Header, signedSecrets)
+		if err != nil {
+			log.Fatal("Cannot NewSecretsVerifier", err)
+			w.WriteHeader(http.StatusInternalServerError)
+		}
+
+		if err := sv.Ensure(); err != nil {
+			log.Fatal("Cannot Ensure signed secrets", err)
+			w.WriteHeader(http.StatusInternalServerError)
+		}
+
+		if eventsAPIEvent.Type == slackevents.URLVerification {
+			var r *slackevents.ChallengeResponse
+			err := json.Unmarshal([]byte(body), &r)
+			if err != nil {
+				w.WriteHeader(http.StatusInternalServerError)
+			}
+			w.Header().Set("Content-Type", "text")
+			if _, err := w.Write([]byte(r.Challenge)); err != nil {
+				log.Fatal("Cannot make ChallengeResponse", err)
+				w.WriteHeader(http.StatusInternalServerError)
+			}
+		}
+		
+		if eventsAPIEvent.Type == slackevents.CallbackEvent {
+			innerEvent := eventsAPIEvent.InnerEvent
+			switch ev := innerEvent.Data.(type) {
+			case *slackevents.AppMentionEvent:
+				if _, _, err := api.PostMessage(ev.Channel, slack.MsgOptionText("Yes, hello.", false)); err != nil {
+					log.Fatal("Cannot PostMessage", err)
+					w.WriteHeader(http.StatusInternalServerError)
+				}
+			}
+		}
+	}
 }

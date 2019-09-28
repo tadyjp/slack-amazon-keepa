@@ -1,12 +1,11 @@
 {
-  "name": "Start on Heroku: Go",
-  "description": "Go Getting Started Example App",
+  "name": "slack-amazon-keepa",
+  "description": "Slack bot, which replies keepa price image unfurling links.",
   "keywords": [
-    "getting-started",
     "go",
-    "sample",
-    "example"
+    "slack",
+    "keepa"
   ],
-  "website": "http://github.com/heroku/go-getting-started",
-  "repository": "http://github.com/heroku/go-getting-started"
+  "website": "https://github.com/tadyjp/slack-amazon-keepa",
+  "repository": "https://github.com/tadyjp/slack-amazon-keepa"
 }
