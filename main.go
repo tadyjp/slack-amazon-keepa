@@ -98,7 +98,7 @@ func hundleEvent(oauthToken string, signedSecret string) func(w http.ResponseWri
 func replyKeepaURL(api *slack.Client, e *slackevents.LinkSharedEvent) error {
 	m := make(map[string]slack.Attachment, len(e.Links))
 
-	re := regexp.MustCompile("dp/([^/]+)/")
+	re := regexp.MustCompile("dp/([^/]+)[/?$]")
 
 	for _, l := range e.Links {
 		match := re.FindStringSubmatch(l.URL)
