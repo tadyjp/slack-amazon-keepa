@@ -47,8 +47,6 @@ func hundleEvent(oauthToken string, signedSecret string) func(w http.ResponseWri
 		}
 		body := buf.String()
 
-		log.Println(body)
-
 		eventsAPIEvent, err := slackevents.ParseEvent(json.RawMessage(body), slackevents.OptionNoVerifyToken())
 		if err != nil {
 			log.Fatal("Cannot parse event: ", err)
@@ -87,8 +85,6 @@ func hundleEvent(oauthToken string, signedSecret string) func(w http.ResponseWri
 		if eventsAPIEvent.Type == slackevents.CallbackEvent {
 			innerEvent := eventsAPIEvent.InnerEvent
 
-			log.Printf("%+v", innerEvent)
-
 			switch ev := innerEvent.Data.(type) {
 			case *slackevents.MessageEvent:
 				if err := replyKeepaURL(api, ev); err != nil {
@@ -111,6 +107,7 @@ func replyKeepaURL(api *slack.Client, ev *slackevents.MessageEvent) error {
 		}
 
 		asin := m[1]
+		log.Printf("asin = %s", asin)
 		text := fmt.Sprintf("https://graph.keepa.com/pricehistory.png?domain=co.jp&asin=%s", asin)
 
 		if _, _, err := api.PostMessage(ev.Channel, slack.MsgOptionText(text, false)); err != nil {
