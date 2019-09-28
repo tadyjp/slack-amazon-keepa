@@ -69,13 +69,14 @@ func hundleEvent(oauthToken string, signedSecrets string) func(w http.ResponseWr
 			if err != nil {
 				w.WriteHeader(http.StatusInternalServerError)
 			}
+
 			w.Header().Set("Content-Type", "text")
 			if _, err := w.Write([]byte(r.Challenge)); err != nil {
 				log.Fatal("Cannot make ChallengeResponse", err)
 				w.WriteHeader(http.StatusInternalServerError)
 			}
 		}
-		
+
 		if eventsAPIEvent.Type == slackevents.CallbackEvent {
 			innerEvent := eventsAPIEvent.InnerEvent
 			switch ev := innerEvent.Data.(type) {
