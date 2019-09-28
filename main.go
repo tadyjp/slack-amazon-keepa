@@ -96,11 +96,13 @@ func hundleEvent(oauthToken string, signedSecret string) func(w http.ResponseWri
 func replyKeepaURL(api *slack.Client, e *slackevents.LinkSharedEvent) error {
 	m := make(map[string]slack.Attachment, len(e.Links))
 
+	log.Printf("%+v", *e)
+
 	for _, l := range e.Links {
 		m[l.URL] = slack.Attachment{Text: l.URL}
 	}
 
-	if _, _, _, err := api.UnfurlMessage(e.Channel, e.TimeStamp, m); err != nil {
+	if _, _, _, err := api.UnfurlMessage(e.Channel, e.MessageTimeStamp.String(), m); err != nil {
 		log.Fatal("Cannot UnfurlMessage: ", err)
 		return err
 	}
