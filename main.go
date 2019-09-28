@@ -96,18 +96,21 @@ func hundleEvent(oauthToken string, signedSecret string) func(w http.ResponseWri
 }
 
 func replyKeepaURL(api *slack.Client, e *slackevents.LinkSharedEvent) error {
-	m := make(map[string]slack.Attachment, len(e.Links))
-
-	re := regexp.MustCompile("dp/([^/]+)[/?$]")
+	re := regexp.MustCompile(`dp/([^/?]+)(\?|\/|$)`)
 
 	for _, l := range e.Links {
 		match := re.FindStringSubmatch(l.URL)
-		m[l.URL] = slack.Attachment{ImageURL: fmt.Sprintf("https://graph.keepa.com/pricehistory.png?domain=co.jp&asin=%s", match[1])}
-	}
 
-	if _, _, _, err := api.UnfurlMessage(e.Channel, e.MessageTimeStamp.String(), m); err != nil {
-		log.Fatal("Cannot UnfurlMessage: ", err)
-		return err
+		if len(match) < 2 {
+			continue
+		}
+
+		text := fmt.Sprintf("https://graph.keepa.com/pricehistory.png?domain=co.jp&asin=%s", match[1])
+
+		if _, _, err := api.PostMessage(e.Channel, slack.MsgOptionText(text, false)); err != nil {
+			log.Fatal("Cannot UnfurlMessage: ", err)
+			return err
+		}
 	}
 
 	return nil
