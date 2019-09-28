@@ -84,7 +84,7 @@ func hundleEvent(oauthToken string, signedSecret string) func(w http.ResponseWri
 		if eventsAPIEvent.Type == slackevents.CallbackEvent {
 			innerEvent := eventsAPIEvent.InnerEvent
 
-			fmt.Printf("%+v", innerEvent)
+			log.Printf("%+v", innerEvent)
 
 			switch ev := innerEvent.Data.(type) {
 			case *slackevents.MessageEvent:
