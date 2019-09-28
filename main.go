@@ -59,6 +59,10 @@ func hundleEvent(oauthToken string, signedSecret string) func(w http.ResponseWri
 			w.WriteHeader(http.StatusInternalServerError)
 		}
 
+		if _, err := sv.Write([]byte(body)); err != nil {
+			log.Fatal("Cannot SecretsVerifier#Write: ", err)
+			w.WriteHeader(http.StatusInternalServerError)
+		}
 		if err := sv.Ensure(); err != nil {
 			log.Fatal("Cannot Ensure signed secrets: ", err)
 			w.WriteHeader(http.StatusInternalServerError)
