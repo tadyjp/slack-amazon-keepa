@@ -3,9 +3,11 @@ package main
 import (
 	"bytes"
 	"encoding/json"
+	"fmt"
 	"log"
 	"net/http"
 	"os"
+	"regexp"
 
 	_ "github.com/heroku/x/hmetrics/onload"
 	"github.com/nlopes/slack"
@@ -99,24 +101,23 @@ func hundleEvent(oauthToken string, signedSecret string) func(w http.ResponseWri
 }
 
 func replyKeepaURL(api *slack.Client, ev *slackevents.MessageEvent) error {
-	// re := regexp.MustCompile(`dp/([^/?]+)(\?|\/|$)`)
+	re := regexp.MustCompile(`amazon\.co\.jp.+?dp/([^/?]+)(\?|\/|$)`)
 
 	log.Printf("%+v", ev.Text)
 
-	// for _, l := range ev.Links {
-	// 	match := re.FindStringSubmatch(l.URL)
+	for _, m := range re.FindAllStringSubmatch(ev.Text, -1) {
+		if len(m) < 2 {
+			continue
+		}
 
-	// 	if len(match) < 2 {
-	// 		continue
-	// 	}
+		asin := m[1]
+		text := fmt.Sprintf("https://graph.keepa.com/pricehistory.png?domain=co.jp&asin=%s", asin)
 
-	// 	text := fmt.Sprintf("https://graph.keepa.com/pricehistory.png?domain=co.jp&asin=%s", match[1])
-
-	// 	if _, _, err := api.PostMessage(e.Channel, slack.MsgOptionText(text, false)); err != nil {
-	// 		log.Fatal("Cannot PostMessage: ", err)
-	// 		return err
-	// 	}
-	// }
+		if _, _, err := api.PostMessage(ev.Channel, slack.MsgOptionText(text, false)); err != nil {
+			log.Fatal("Cannot PostMessage: ", err)
+			return err
+		}
+	}
 
 	return nil
 }
