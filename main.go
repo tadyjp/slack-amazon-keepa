@@ -3,9 +3,11 @@ package main
 import (
 	"bytes"
 	"encoding/json"
+	"fmt"
 	"log"
 	"net/http"
 	"os"
+	"regexp"
 
 	_ "github.com/heroku/x/hmetrics/onload"
 	"github.com/nlopes/slack"
@@ -96,10 +98,11 @@ func hundleEvent(oauthToken string, signedSecret string) func(w http.ResponseWri
 func replyKeepaURL(api *slack.Client, e *slackevents.LinkSharedEvent) error {
 	m := make(map[string]slack.Attachment, len(e.Links))
 
-	log.Printf("%+v", *e)
+	re := regexp.MustCompile("dp/([^/]+)/")
 
 	for _, l := range e.Links {
-		m[l.URL] = slack.Attachment{Text: l.URL}
+		match := re.FindStringSubmatch(l.URL)
+		m[l.URL] = slack.Attachment{Text: fmt.Sprintf("https://graph.keepa.com/pricehistory.png?domain=co.jp&asin=%s", match[1])}
 	}
 
 	if _, _, _, err := api.UnfurlMessage(e.Channel, e.MessageTimeStamp.String(), m); err != nil {
