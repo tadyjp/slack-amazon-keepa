@@ -1,6 +1,4 @@
-static/* linguist-vendored
-templates/* linguist-vendored
-vendor/* linguist-vendored
+images/* linguist-documentation
 app.json linguist-documentation
 heroku.yml linguist-documentation
 Procfile linguist-documentation
