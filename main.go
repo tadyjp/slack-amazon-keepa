@@ -102,7 +102,7 @@ func replyKeepaURL(api *slack.Client, e *slackevents.LinkSharedEvent) error {
 
 	for _, l := range e.Links {
 		match := re.FindStringSubmatch(l.URL)
-		m[l.URL] = slack.Attachment{Text: fmt.Sprintf("https://graph.keepa.com/pricehistory.png?domain=co.jp&asin=%s", match[1])}
+		m[l.URL] = slack.Attachment{ImageURL: fmt.Sprintf("https://graph.keepa.com/pricehistory.png?domain=co.jp&asin=%s", match[1])}
 	}
 
 	if _, _, _, err := api.UnfurlMessage(e.Channel, e.MessageTimeStamp.String(), m); err != nil {
