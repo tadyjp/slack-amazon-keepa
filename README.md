@@ -27,7 +27,7 @@ Slack bot that returns Keepa image on posting an Amazon's product URL.
 ### Event Subscriptions
 
 - Request URL
-  * https://<host>/events-endpoint
+  * https://{host}/events-endpoint
 - Subscribe to Workspace Events
   * `message.channels`
 
