@@ -7,7 +7,6 @@ import (
 	"log"
 	"net/http"
 	"os"
-	"regexp"
 
 	_ "github.com/heroku/x/hmetrics/onload"
 	"github.com/nlopes/slack"
@@ -84,8 +83,11 @@ func hundleEvent(oauthToken string, signedSecret string) func(w http.ResponseWri
 
 		if eventsAPIEvent.Type == slackevents.CallbackEvent {
 			innerEvent := eventsAPIEvent.InnerEvent
+
+			fmt.Printf("%+v", innerEvent)
+
 			switch ev := innerEvent.Data.(type) {
-			case *slackevents.LinkSharedEvent:
+			case *slackevents.MessageEvent:
 				if err := replyKeepaURL(api, ev); err != nil {
 					log.Fatal("Cannot replyKeepaURL: ", err)
 					w.WriteHeader(http.StatusInternalServerError)
@@ -95,23 +97,25 @@ func hundleEvent(oauthToken string, signedSecret string) func(w http.ResponseWri
 	}
 }
 
-func replyKeepaURL(api *slack.Client, e *slackevents.LinkSharedEvent) error {
-	re := regexp.MustCompile(`dp/([^/?]+)(\?|\/|$)`)
+func replyKeepaURL(api *slack.Client, ev *slackevents.MessageEvent) error {
+	// re := regexp.MustCompile(`dp/([^/?]+)(\?|\/|$)`)
 
-	for _, l := range e.Links {
-		match := re.FindStringSubmatch(l.URL)
+	fmt.Printf("%+v", ev.Text)
 
-		if len(match) < 2 {
-			continue
-		}
+	// for _, l := range ev.Links {
+	// 	match := re.FindStringSubmatch(l.URL)
 
-		text := fmt.Sprintf("https://graph.keepa.com/pricehistory.png?domain=co.jp&asin=%s", match[1])
+	// 	if len(match) < 2 {
+	// 		continue
+	// 	}
 
-		if _, _, err := api.PostMessage(e.Channel, slack.MsgOptionText(text, false)); err != nil {
-			log.Fatal("Cannot UnfurlMessage: ", err)
-			return err
-		}
-	}
+	// 	text := fmt.Sprintf("https://graph.keepa.com/pricehistory.png?domain=co.jp&asin=%s", match[1])
+
+	// 	if _, _, err := api.PostMessage(e.Channel, slack.MsgOptionText(text, false)); err != nil {
+	// 		log.Fatal("Cannot PostMessage: ", err)
+	// 		return err
+	// 	}
+	// }
 
 	return nil
 }
