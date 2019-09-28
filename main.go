@@ -45,8 +45,6 @@ func hundleEvent(oauthToken string, signedSecret string) func(w http.ResponseWri
 		}
 		body := buf.String()
 
-		log.Printf("%+v", r.Header)
-
 		eventsAPIEvent, err := slackevents.ParseEvent(json.RawMessage(body), slackevents.OptionNoVerifyToken())
 		if err != nil {
 			log.Fatal("Cannot parse event: ", err)
@@ -85,12 +83,27 @@ func hundleEvent(oauthToken string, signedSecret string) func(w http.ResponseWri
 		if eventsAPIEvent.Type == slackevents.CallbackEvent {
 			innerEvent := eventsAPIEvent.InnerEvent
 			switch ev := innerEvent.Data.(type) {
-			case *slackevents.AppMentionEvent:
-				if _, _, err := api.PostMessage(ev.Channel, slack.MsgOptionText("Yes, hello.", false)); err != nil {
-					log.Fatal("Cannot PostMessage: ", err)
+			case *slackevents.LinkSharedEvent:
+				if err := replyKeepaURL(api, ev); err != nil {
+					log.Fatal("Cannot replyKeepaURL: ", err)
 					w.WriteHeader(http.StatusInternalServerError)
 				}
 			}
 		}
 	}
+}
+
+func replyKeepaURL(api *slack.Client, e *slackevents.LinkSharedEvent) error {
+	m := make(map[string]slack.Attachment, len(e.Links))
+
+	for _, l := range e.Links {
+		m[l.URL] = slack.Attachment{Text: l.URL}
+	}
+
+	if _, _, _, err := api.UnfurlMessage(e.Channel, e.TimeStamp, m); err != nil {
+		log.Fatal("Cannot UnfurlMessage: ", err)
+		return err
+	}
+
+	return nil
 }
